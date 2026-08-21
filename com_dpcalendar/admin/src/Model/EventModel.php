@@ -426,6 +426,12 @@ class EventModel extends AdminModel implements UserFactoryAwareInterface
 		}
 
 		if (isset($data['schedule']) && \is_array($data['schedule'])) {
+			foreach ($data['schedule'] as &$row) {
+				if (isset($row['title'])) {
+					$row['title'] = strip_tags((string)$row['title']);
+				}
+			}
+			unset($row);
 			$data['schedule'] = $data['schedule'] !== [] ? json_encode($data['schedule']) : '';
 		}
 
