@@ -126,9 +126,11 @@ class IcalModel extends BaseDatabaseModel
 
 	public function icalEncode(string $text): string
 	{
-		$newText = str_replace(',', '\,', $text);
+		$text = str_replace('\\', '\\\\', $text);
+		$text = str_replace(["\r\n", "\n", "\r"], '\n', $text);
+		$text = str_replace(',', '\,', $text);
 
-		return str_replace(';', '\;', $newText);
+		return str_replace(';', '\;', $text);
 	}
 
 	private function addEventData(\stdClass $event, ?EventsModel $eventsModel = null): array
@@ -268,15 +270,15 @@ class IcalModel extends BaseDatabaseModel
 		}
 
 		$created = DPCalendarHelper::getDate($event->created);
-		$text[]  = 'SUMMARY:' . $event->title;
+		$text[]  = 'SUMMARY:' . self::icalEncode((string)$event->title);
 		$text[]  = 'CREATED:' . $created->format('Ymd\THis\Z');
 		$text[]  = 'DTSTAMP:' . $created->format('Ymd\THis\Z');
-		$text[]  = 'URL:' . ($event->url ?: RouteHelper::getEventRoute($event->id, $event->catid, true, true));
+		$text[]  = 'URL:' . self::icalEncode((string)($event->url ?: RouteHelper::getEventRoute($event->id, $event->catid, true, true)));
 
 		if ($event->description) {
 			$description = (empty($event->introText) ? '' : $event->introText . '<hr id="system-readmore">') . $event->description;
-			$text[]      = 'DESCRIPTION:' . InputFilter::getInstance()->clean(preg_replace('/\r\n|\r|\n/', "\N", $description));
-			$text[]      = 'X-ALT-DESC;FMTTYPE=text/html:' . preg_replace('/\r\n|\r|\n/', '', $description);
+			$text[]      = 'DESCRIPTION:' . self::icalEncode((string)InputFilter::getInstance()->clean($description));
+			$text[]      = 'X-ALT-DESC;FMTTYPE=text/html:' . self::icalEncode((string)preg_replace('/\r\n|\r|\n/', '', $description));
 		}
 
 		if ($event->modified) {
@@ -296,11 +298,11 @@ class IcalModel extends BaseDatabaseModel
 
 		if (!empty($event->roomTitles)) {
 			$customLocation .= ' [' . implode(', ', array_merge(...array_values($event->roomTitles))) . ']';
-			$text[] = 'X-ROOMS:' . implode(', ', array_merge(...array_values($event->roomTitles)));
+			$text[] = 'X-ROOMS:' . self::icalEncode(implode(', ', array_merge(...array_values($event->roomTitles))));
 		}
 
 		if ($customLocation !== '' && $customLocation !== '0') {
-			$text[] = 'X-LOCATION-DISPLAYNAME:' . $customLocation;
+			$text[] = 'X-LOCATION-DISPLAYNAME:' . self::icalEncode($customLocation);
 		}
 
 		$text[] = 'X-ACCESS:' . $event->access;
@@ -312,20 +314,20 @@ class IcalModel extends BaseDatabaseModel
 			$text[] = 'X-IMAGE-FULL:' . (str_starts_with((string)$image, 'http') ? '' : Uri::base()) . $image;
 		}
 		if ($event->images && !empty($event->images->image_full_alt)) {
-			$text[] = 'X-IMAGE-FULL-ALT:' . $event->images->image_full_alt;
+			$text[] = 'X-IMAGE-FULL-ALT:' . self::icalEncode((string)$event->images->image_full_alt);
 		}
 		if ($event->images && !empty($event->images->image_full_caption)) {
-			$text[] = 'X-IMAGE-FULL-CAPTION:' . $event->images->image_full_caption;
+			$text[] = 'X-IMAGE-FULL-CAPTION:' . self::icalEncode((string)$event->images->image_full_caption);
 		}
 		if ($event->images && !empty($event->images->image_intro)) {
 			$image  = $event->images->image_intro;
 			$text[] = 'X-IMAGE-INTRO:' . (str_starts_with((string)$image, 'http') ? '' : Uri::base()) . $image;
 		}
 		if ($event->images && !empty($event->images->image_intro_alt)) {
-			$text[] = 'X-IMAGE-INTRO-ALT:' . $event->images->image_intro_alt;
+			$text[] = 'X-IMAGE-INTRO-ALT:' . self::icalEncode((string)$event->images->image_intro_alt);
 		}
 		if ($event->images && !empty($event->images->image_intro_caption)) {
-			$text[] = 'X-IMAGE-INTRO-CAPTION:' . $event->images->image_intro_caption;
+			$text[] = 'X-IMAGE-INTRO-CAPTION:' . self::icalEncode((string)$event->images->image_intro_caption);
 		}
 		$text[] = 'X-SHOW-END-TIME:' . $event->show_end_time;
 
