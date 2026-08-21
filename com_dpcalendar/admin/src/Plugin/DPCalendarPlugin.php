@@ -14,6 +14,7 @@ use DigitalPeak\Component\DPCalendar\Administrator\Calendar\ExternalCalendar;
 use DigitalPeak\Component\DPCalendar\Administrator\Calendar\ExternalCalendarInterface;
 use DigitalPeak\Component\DPCalendar\Administrator\Extension\DPCalendarComponent;
 use DigitalPeak\Component\DPCalendar\Administrator\Helper\DPCalendarHelper;
+use DigitalPeak\Component\DPCalendar\Administrator\Helper\SafeFetchHelper;
 use DigitalPeak\ThinHTTP\ClientFactoryAwareInterface;
 use DigitalPeak\ThinHTTP\ClientFactoryAwareTrait;
 use Joomla\CMS\Application\ApplicationHelper;
@@ -1257,39 +1258,58 @@ abstract class DPCalendarPlugin extends CMSPlugin implements ClientFactoryAwareI
 			return '';
 		}
 
-		$internal = !filter_var($uri, FILTER_VALIDATE_URL);
-		if ($internal && !str_starts_with($uri, '/')) {
-			$uri = JPATH_ROOT . '/' . $uri;
+		$uri = str_replace('webcal://', 'https://', $uri);
+
+		if (preg_match('#^[a-z][a-z0-9+.-]*://#i', $uri) === 1) {
+			if (!SafeFetchHelper::isPublicHttpUrl($uri)) {
+				return '';
+			}
+
+			$u   = Uri::getInstance($uri);
+			$uri = $u->toString(['scheme', 'user', 'pass', 'host', 'port', 'path']);
+			$uri .= $u->toString(['query', 'fragment']);
+
+			if (!SafeFetchHelper::isPublicHttpUrl($uri)) {
+				return '';
+			}
+
+			$user    = $app->getIdentity();
+			$headers = [
+				'Accept-Language: ' . ($user ? $user->getParam('language', $app->getLanguage()->getTag()) : '*'),
+				'Accept: */*'
+			];
+			$data = $this->getClientFactory()->create()->get($uri, null, null, $headers, SafeFetchHelper::safeCurlOptions($curlOptions));
+			if (!empty($data->dp->headers['Content-Encoding']) && $data->dp->headers['Content-Encoding'] == 'gzip' && !empty($data->dp->body)) {
+				return gzinflate(substr((string)$data->dp->body, 10, -8)) ?: '';
+			}
+
+			return $data->dp->body;
 		}
 
-		if ($internal && is_dir($uri)) {
+		$path = SafeFetchHelper::resolveSafeLocalPath($uri);
+		if ($path === null) {
+			return '';
+		}
+
+		if (is_dir($path)) {
 			$content = '';
-			foreach (Folder::files($uri, '\.ics', true, true) as $file) {
-				$content .= file_get_contents($file);
+			foreach (Folder::files($path, '\.ics', true, true) as $file) {
+				$safe = SafeFetchHelper::resolveSafeLocalPath($file);
+				if ($safe === null) {
+					continue;
+				}
+
+				$content .= file_get_contents($safe) ?: '';
 			}
 
 			return $content;
 		}
 
-		if ($internal) {
-			return file_get_contents($uri) ?: '';
+		if (!str_ends_with(strtolower($path), '.ics')) {
+			return '';
 		}
 
-		$u   = Uri::getInstance($uri);
-		$uri = $u->toString(['scheme', 'user', 'pass', 'host', 'port', 'path']);
-		$uri .= $u->toString(['query', 'fragment']);
-
-		$user    = $app->getIdentity();
-		$headers = [
-			'Accept-Language: ' . ($user ? $user->getParam('language', $app->getLanguage()->getTag()) : '*'),
-			'Accept: */*'
-		];
-		$data = $this->getClientFactory()->create()->get($uri, null, null, $headers, $curlOptions);
-		if (!empty($data->dp->headers['Content-Encoding']) && $data->dp->headers['Content-Encoding'] == 'gzip' && !empty($data->dp->body)) {
-			return gzinflate(substr((string)$data->dp->body, 10, -8)) ?: '';
-		}
-
-		return $data->dp->body;
+		return file_get_contents($path) ?: '';
 	}
 
 	protected function getDPCalendar(): DPCalendarComponent

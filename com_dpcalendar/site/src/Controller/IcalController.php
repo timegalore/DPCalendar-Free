@@ -10,6 +10,7 @@ namespace DigitalPeak\Component\DPCalendar\Site\Controller;
 \defined('_JEXEC') or die();
 
 use DigitalPeak\Component\DPCalendar\Administrator\Calendar\CalendarInterface;
+use DigitalPeak\Component\DPCalendar\Administrator\Helper\SafeFetchHelper;
 use DigitalPeak\ThinHTTP\CurlClient;
 use Joomla\CMS\Application\CMSWebApplicationInterface;
 use Joomla\CMS\Authentication\Authentication;
@@ -60,6 +61,11 @@ class IcalController extends BaseController implements UserFactoryAwareInterface
 		}
 
 		if ($calendar->getIcalUrl() !== '' && $calendar->getIcalUrl() !== '0') {
+			$url = str_replace('webcal://', 'https://', (string)$calendar->getIcalUrl());
+			if (!SafeFetchHelper::isPublicHttpUrl($url)) {
+				throw new \Exception('Invalid calendar URL', 400);
+			}
+
 			header('Content-Type: text/calendar; charset=utf-8');
 			header('Content-disposition: attachment; filename="' . $calendar->getTitle() . '.ics"');
 
@@ -67,7 +73,7 @@ class IcalController extends BaseController implements UserFactoryAwareInterface
 				'Accept-Language: ' . $this->getCurrentUser()->getParam('language', $app->getLanguage()->getTag()),
 				'Accept: */*'
 			];
-			echo (new CurlClient())->get($calendar->getIcalUrl(), null, null, $headers)->dp->body;
+			echo (new CurlClient())->get($url, null, null, $headers, SafeFetchHelper::safeCurlOptions())->dp->body;
 			$app->close();
 		}
 
