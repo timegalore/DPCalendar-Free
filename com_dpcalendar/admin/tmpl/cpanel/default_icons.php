@@ -9,6 +9,7 @@
 
 use DigitalPeak\Component\DPCalendar\Administrator\Helper\DPCalendarHelper;
 use DigitalPeak\Component\DPCalendar\Administrator\HTML\Block\Icon;
+use Joomla\CMS\Session\Session;
 ?>
 <div class="com-dpcalendar-cpanel__icons">
 	<div class="dp-quick-icon">
@@ -57,7 +58,7 @@ use DigitalPeak\Component\DPCalendar\Administrator\HTML\Block\Icon;
 	</div>
 	<?php if (!DPCalendarHelper::isFree() && $this->needsGeoDBUpdate) { ?>
 		<div class="dp-quick-icon">
-			<a class="dp-link dp-quick-icon__link" href="index.php?option=com_dpcalendar&task=import.geodb">
+			<a class="dp-link dp-quick-icon__link" href="index.php?option=com_dpcalendar&task=import.geodb&<?php echo Session::getFormToken(); ?>=1">
 				<?php echo $this->layoutHelper->renderLayout('block.icon', ['icon' => Icon::DATABASE]); ?>
 				<span class="dp-icon-overlay">
 				<?php echo $this->layoutHelper->renderLayout('block.icon', ['icon' => Icon::EXCLAMATION]); ?>

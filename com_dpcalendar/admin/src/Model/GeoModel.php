@@ -309,16 +309,13 @@ class GeoModel extends BaseDatabaseModel implements CacheControllerFactoryAwareI
 		$ip = $_SERVER['REMOTE_ADDR'];
 
 		// Compile the file name
-		$fileName = $geoDBDirectory . '/' . current(explode('.', (string)$ip)) . '.php';
+		$fileName = $geoDBDirectory . '/' . current(explode('.', (string)$ip)) . '.json';
 		if (!file_exists($fileName)) {
 			return null;
 		}
 
-		try {
-			// Read the data from the file
-			$data = require $fileName;
-			// @phpstan-ignore-next-line
-		} catch (\Throwable|\Exception) {
+		$data = json_decode((string)file_get_contents($fileName), true);
+		if (!\is_array($data)) {
 			return null;
 		}
 

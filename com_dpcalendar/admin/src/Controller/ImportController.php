@@ -31,6 +31,8 @@ class ImportController extends BaseController
 
 	public function geodb(): void
 	{
+		Session::checkToken('get') or jexit(Text::_('JINVALID_TOKEN'));
+
 		$model = $this->getModel();
 
 		$message = '';

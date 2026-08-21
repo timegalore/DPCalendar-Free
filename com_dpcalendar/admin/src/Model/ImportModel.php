@@ -187,7 +187,7 @@ class ImportModel extends BaseDatabaseModel
 			throw new \Exception("Can't open the geolocation database file.");
 		}
 
-		$files = [];
+		$grouped = [];
 		while ($data = fgetcsv($import, null, ',', '"', '\\')) {
 			if ($data[0] == '0') {
 				continue;
@@ -195,31 +195,18 @@ class ImportModel extends BaseDatabaseModel
 
 			// Filename contains the first part of the IP
 			$ip       = long2ip((int)$data[0]);
-			$fileName = (\in_array($ip, ['', '0', false], true) ? 'undefined' : current(explode('.', $ip))) . '.php';
-
-			// The files array with the IP data file names
-			$files[$fileName] = $geoDBDirectory . '/' . $fileName;
-
-			// The buffer which contains the PHP code for the data array
-			$buffer = '';
-
-			// The files are PHP arrays for fast lookup
-			if (!file_exists($geoDBDirectory . '/' . $fileName)) {
-				// Create the main array
-				$buffer .= '<?php' . PHP_EOL;
-				$buffer .= 'return [' . PHP_EOL;
-			}
-
-			// The data array
-			$buffer .= "['" . $data[0] . "', '" . $data[1] . "', '" . $data[2] . "']," . PHP_EOL;
-
-			// Write the buffer
-			file_put_contents($geoDBDirectory . '/' . $fileName, $buffer, FILE_APPEND | LOCK_EX);
+			$fileName = (\in_array($ip, ['', '0', false], true) ? 'undefined' : current(explode('.', $ip))) . '.json';
+			$grouped[$fileName][] = [(int)$data[0], (int)$data[1], (string)$data[2]];
 		}
 
-		// Close the main array
-		foreach ($files as $file) {
-			file_put_contents($file, '];', FILE_APPEND | LOCK_EX);
+		fclose($import);
+
+		foreach ($grouped as $fileName => $rows) {
+			file_put_contents($geoDBDirectory . '/' . $fileName, json_encode($rows));
+		}
+
+		foreach (glob($geoDBDirectory . '/*.php') ?: [] as $legacy) {
+			@unlink($legacy);
 		}
 
 		@unlink($geoDBDirectory . '/IP2LOCATION-LITE-DB1.CSV');
