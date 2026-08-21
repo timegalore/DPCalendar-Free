@@ -178,12 +178,15 @@ class EventController extends FormController implements CurrentUserInterface
 		// Redirect to the return page
 		$redirect = $this->getReturnPage();
 
-		// J4 router redirects to the delete task again
+		// Prefer the raw return URL so the J4 router does not send us back to delete
 		if ($return = $this->input->get('return', null, 'default')) {
-			$redirect = base64_decode((string)$return);
+			$decoded = base64_decode((string)$return);
+			if (Uri::isInternal($decoded)) {
+				$redirect = $decoded;
 
-			if (($hash = $this->input->getString('urlhash', '')) !== '' && ($hash = $this->input->getString('urlhash', '')) !== '0') {
-				$redirect .= '#' . trim($hash, '#');
+				if (($hash = $this->input->getString('urlhash', '')) !== '' && ($hash = $this->input->getString('urlhash', '')) !== '0') {
+					$redirect .= '#' . trim($hash, '#');
+				}
 			}
 		}
 		$this->setRedirect($redirect, Text::_('COM_DPCALENDAR_DELETE_SUCCESS'));
@@ -633,7 +636,7 @@ class EventController extends FormController implements CurrentUserInterface
 		$data = $this->input->post->get('jform', [], 'array');
 		$this->getModel('Form')->invite((int)$data['event_id'], $data['users'] ?? [], $data['groups'] ?? []);
 
-		$this->setRedirect(base64_decode($this->input->getBase64('return')), Text::_('COM_DPCALENDAR_SENT_INVITATION'));
+		$this->setRedirect($this->getReturnPage(), Text::_('COM_DPCALENDAR_SENT_INVITATION'));
 	}
 
 	public function mailtickets(): void
