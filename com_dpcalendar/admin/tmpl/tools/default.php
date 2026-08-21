@@ -9,6 +9,7 @@
 
 use DigitalPeak\Component\DPCalendar\Administrator\HTML\Block\Icon;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Session\Session;
 
 $this->dpdocument->loadStyleFile('dpcalendar/views/tools/default.css');
 ?>
@@ -23,7 +24,7 @@ $this->dpdocument->loadStyleFile('dpcalendar/views/tools/default.css');
 					</a>
 				</div>
 				<div class="dp-quick-icon">
-					<a class="dp-link dp-quick-icon__link" href="index.php?option=com_dpcalendar&task=caldav.sync">
+					<a class="dp-link dp-quick-icon__link" href="index.php?option=com_dpcalendar&task=caldav.sync&<?php echo Session::getFormToken(); ?>=1">
 						<?php echo $this->layoutHelper->renderLayout('block.icon', ['icon' => Icon::SYNC]); ?>
 						<span><?php echo Text::_('COM_DPCALENDAR_VIEW_TOOLS_CALDAV'); ?></span>
 					</a>
