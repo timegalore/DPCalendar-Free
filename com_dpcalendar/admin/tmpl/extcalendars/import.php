@@ -9,6 +9,7 @@
 
 use DigitalPeak\Component\DPCalendar\Administrator\Helper\DPCalendarHelper;
 use Joomla\CMS\Form\Form;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Language\Text;
 
@@ -28,5 +29,6 @@ $form = Form::getInstance('form', 'params');
 	<?php } ?>
 	<input type="hidden" name="task" value="plugin.action"/>
 	<input type="hidden" name="action" value="import"/>
+	<?php echo HTMLHelper::_('form.token'); ?>
 	<input type="submit" class="btn btn-primary" value="<?php echo Text::_('COM_DPCALENDAR_VIEW_TOOLS_IMPORT') ?>"/>
 </form>

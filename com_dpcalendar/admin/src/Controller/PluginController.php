@@ -10,13 +10,17 @@ namespace DigitalPeak\Component\DPCalendar\Administrator\Controller;
 \defined('_JEXEC') or die();
 
 use DigitalPeak\Component\DPCalendar\Administrator\Plugin\DPCalendarPlugin;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Session\Session;
 
 class PluginController extends BaseController
 {
 	public function action(): void
 	{
+		Session::checkToken('request') or jexit(Text::_('JINVALID_TOKEN'));
+
 		$plugin = $this->input->getWord('dpplugin', $this->input->getWord('plugin', ''));
 		$type   = $this->input->getWord('type', 'dpcalendar');
 
