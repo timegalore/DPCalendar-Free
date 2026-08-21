@@ -138,6 +138,8 @@ class EventController extends FormController implements CurrentUserInterface
 
 	public function delete(string $key = 'e_id'): bool
 	{
+		Session::checkToken('get') or jexit(Text::_('JINVALID_TOKEN'));
+
 		$recordId = $this->input->getString($key, '');
 
 		if (!$this->allowDelete([$key => $recordId], $key)) {

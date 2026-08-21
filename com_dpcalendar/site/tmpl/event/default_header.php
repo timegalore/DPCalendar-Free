@@ -53,7 +53,7 @@ if ($tmpl = $this->input->getWord('tmpl')) {
 	$return->setVar('layout', 'empty');
 	$return->setVar('tmpl', $tmpl);
 }
-$deleteUrl .= '&return=' . base64_encode($return) . '&e_id=';
+$deleteUrl .= '&return=' . base64_encode($return) . '&' . Session::getFormToken() . '=1&e_id=';
 $this->translator->translateJS('COM_DPCALENDAR_CONFIRM_DELETE');
 ?>
 <div class="com-dpcalendar-event__actions dp-button-bar dp-print-hide">

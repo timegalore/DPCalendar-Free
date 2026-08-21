@@ -23,6 +23,7 @@ use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
 use Mustache\Engine;
@@ -330,7 +331,7 @@ class DPCalendarHelper
 			$variables['canDelete']  = $calendar instanceof CalendarInterface && ($calendar->canDelete() || ($calendar->canEditOwn() && $event->created_by == $user->id));
 			$variables['deleteLink'] = Route::link(
 				'site',
-				'index.php?option=com_dpcalendar&task=event.delete&e_id=' . $event->id . ($return ? '&return=' . base64_encode($return) : '')
+				'index.php?option=com_dpcalendar&task=event.delete&e_id=' . $event->id . '&' . Session::getFormToken() . '=1' . ($return ? '&return=' . base64_encode($return) : '')
 			);
 
 			$variables['canBook']  = Booking::openForBooking($event);

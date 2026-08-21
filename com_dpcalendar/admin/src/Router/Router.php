@@ -9,6 +9,7 @@ namespace DigitalPeak\Component\DPCalendar\Administrator\Router;
 
 use DigitalPeak\Component\DPCalendar\Site\Helper\RouteHelper;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Session\Session;
 
 class Router
 {
@@ -42,7 +43,7 @@ class Router
 
 	public function getEventDeleteRoute(string $id, ?string $return = null): string
 	{
-		return Route::_('index.php?option=com_dpcalendar&task=event.delete&e_id=' . $id . '&return=' . base64_encode(\in_array($return, [null, '', '0'], true) ? '' : $return));
+		return Route::_('index.php?option=com_dpcalendar&task=event.delete&e_id=' . $id . '&' . Session::getFormToken() . '=1&return=' . base64_encode(\in_array($return, [null, '', '0'], true) ? '' : $return));
 	}
 
 	public function getLocationRoute(\stdClass $location): string
