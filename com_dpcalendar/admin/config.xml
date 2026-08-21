@@ -1814,6 +1814,9 @@
 			<option value="1">JYES</option>
 			<option value="0">JNO</option>
 		</field>
+		<field name="weblate_token" type="password" filter="raw" autocomplete="off"
+			label="COM_DPCALENDAR_FIELD_CONFIG_COMPONENT_WEBLATE_TOKEN_LABEL"
+			description="COM_DPCALENDAR_FIELD_CONFIG_COMPONENT_WEBLATE_TOKEN_DESC"/>
 		<field name="save_history" type="radio" class="btn-group" default="0"
 			label="JGLOBAL_SAVE_HISTORY_OPTIONS_LABEL" description="JGLOBAL_SAVE_HISTORY_OPTIONS_DESC">
 			<option value="0">JNO</option>

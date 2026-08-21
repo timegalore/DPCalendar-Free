@@ -9,18 +9,22 @@ namespace DigitalPeak\Component\DPCalendar\Administrator\Model;
 
 \defined('_JEXEC') or die();
 
+use DigitalPeak\Component\DPCalendar\Administrator\Helper\DPCalendarHelper;
 use DigitalPeak\ThinHTTP\CurlClient;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 
 class ToolsModel extends BaseDatabaseModel
 {
-	private static string $key = 'wlu_3AcTx1VREAN4M5if9FXhhV7z9cDqeo9BnrFg';
-
 	public function getResourcesFromTranslation(): array
 	{
+		$token = $this->getTranslationKey();
+		if ($token === '') {
+			return [];
+		}
+
 		$resources = (new CurlClient())->get(
 			'https://translate.digital-peak.com/api/projects/dpcalendar/components/',
-			self::$key
+			$token
 		)->results;
 		if ($resources === []) {
 			return [];
@@ -38,20 +42,44 @@ class ToolsModel extends BaseDatabaseModel
 
 	public function getResourceStats(string $resourceId): array
 	{
+		$token = $this->getTranslationKey();
+		if ($token === '') {
+			return [];
+		}
+
 		return (new CurlClient())->get(
 			'https://translate.digital-peak.com/api/components/dpcalendar/' . $resourceId . '/statistics/',
-			self::$key
+			$token
 		)->results;
 	}
 
 	public function getResourceStrings(string $resourceId, string $language): string
 	{
+		$token = $this->getTranslationKey();
+		if ($token === '') {
+			return '';
+		}
+
 		$file = (new CurlClient())->get(
 			'https://translate.digital-peak.com/api/translations/dpcalendar/' . $resourceId . '/' . $language . '/file/',
-			self::$key
+			$token
 		);
 
 		return $file->dp->body;
+	}
+
+	/**
+	 * Weblate credentials must not ship in the install zip. Prefer the server
+	 * environment, then an admin-only component setting.
+	 */
+	private function getTranslationKey(): string
+	{
+		$env = getenv('DPCALENDAR_WEBLATE_TOKEN');
+		if (\is_string($env) && $env !== '') {
+			return $env;
+		}
+
+		return trim((string) DPCalendarHelper::getComponentParameter('weblate_token', ''));
 	}
 
 	public function getPluginForName(string $name): ?\stdClass

@@ -7,6 +7,7 @@
 
 \defined('_JEXEC') or die();
 
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 
 $this->dpdocument->loadStyleFile('dpcalendar/views/tools/translate.css');
@@ -14,6 +15,7 @@ $this->dpdocument->loadScriptFile('views/tools/translate.js');
 
 $this->app->enqueueMessage($this->translate('COM_DPCALENDAR_VIEW_TOOLS_TRANSLATE_TEXT'), 'warning');
 ?>
+<form action="index.php?option=com_dpcalendar&view=tools&layout=translate" method="post" name="adminForm" id="adminForm">
 <div class="com-dpcalendar-tools-translate">
 	<div id="j-main-container">
 		<div class="com-dpcalendar-tools-translate__loader">
@@ -56,3 +58,6 @@ $this->app->enqueueMessage($this->translate('COM_DPCALENDAR_VIEW_TOOLS_TRANSLATE
 		</div>
 	</div>
 </div>
+	<input type="hidden" name="task" value=""/>
+	<?php echo HTMLHelper::_('form.token'); ?>
+</form>

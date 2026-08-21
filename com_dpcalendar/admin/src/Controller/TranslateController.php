@@ -14,11 +14,14 @@ use DigitalPeak\Component\DPCalendar\Administrator\Model\ToolsModel;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Session\Session;
 
 class TranslateController extends BaseController
 {
 	public function fetch(): void
 	{
+		$this->authorizeTranslate();
+
 		// The resource to fetch
 		$resource = $this->input->getCmd('resource', '');
 		if ($resource === '' || $resource === '0') {
@@ -50,6 +53,9 @@ class TranslateController extends BaseController
 
 	public function update(): void
 	{
+		Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
+		$this->authorizeTranslate();
+
 		// The resource to update
 		$resource = $this->input->getCmd('resource');
 		if ($resource === '' || $resource === '0') {
@@ -129,5 +135,12 @@ class TranslateController extends BaseController
 			false,
 			['resource' => $resource]
 		);
+	}
+
+	private function authorizeTranslate(): void
+	{
+		if (!$this->app->getIdentity()->authorise('core.admin', 'com_dpcalendar')) {
+			throw new \Exception(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+		}
 	}
 }
