@@ -13,17 +13,17 @@ use DigitalPeak\Component\DPCalendar\Administrator\Calendar\CalendarInterface;
 use DigitalPeak\Component\DPCalendar\Administrator\Helper\SafeFetchHelper;
 use DigitalPeak\ThinHTTP\CurlClient;
 use Joomla\CMS\Application\CMSWebApplicationInterface;
-use Joomla\CMS\Authentication\Authentication;
-use Joomla\CMS\Authentication\AuthenticationResponse;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Mail\MailHelper;
 use Joomla\CMS\MVC\Controller\BaseController;
-use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\User\CurrentUserInterface;
 use Joomla\CMS\User\CurrentUserTrait;
+use Joomla\CMS\User\User;
 use Joomla\CMS\User\UserFactoryAwareInterface;
 use Joomla\CMS\User\UserFactoryAwareTrait;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Filesystem\Path;
+use Joomla\Registry\Registry;
 
 class IcalController extends BaseController implements UserFactoryAwareInterface, CurrentUserInterface
 {
@@ -40,9 +40,8 @@ class IcalController extends BaseController implements UserFactoryAwareInterface
 		// Remove the script time limit.
 		@set_time_limit(0);
 
-		$loggedIn = false;
-		if ($this->getCurrentUser()->guest && $token = $this->input->get('token')) {
-			$loggedIn = $this->login($token);
+		if ($this->getCurrentUser()->guest && ($token = $this->input->getString('token', '')) !== '') {
+			$this->applyIcsToken($token);
 		}
 
 		// Get the calendar
@@ -95,10 +94,6 @@ class IcalController extends BaseController implements UserFactoryAwareInterface
 		$buffer = MailHelper::convertRelativeToAbsoluteUrls($buffer);
 		echo $buffer;
 
-		if ($loggedIn) {
-			$app->getSession()->set('user');
-		}
-
 		/* @deprecated no format is not supported */
 		if ($app->getInput()->get('format') !== 'raw') {
 			header('Content-Type: text/calendar; charset=utf-8');
@@ -107,35 +102,52 @@ class IcalController extends BaseController implements UserFactoryAwareInterface
 		}
 	}
 
-	private function login(string $token): bool
+	/**
+	 * Authorize this ICS request with a user token without creating a site session.
+	 */
+	private function applyIcsToken(string $token): void
 	{
 		$app = $this->app;
 		if (!$app instanceof CMSWebApplicationInterface) {
-			return false;
+			return;
 		}
 
-		// Check if really the token is passed
-		$user = $app->bootComponent('dpcalendar')->getMVCFactory()->createModel('Profile', 'Site')->getUserForToken($token);
+		$user = $this->getUserForIcsToken($token);
 		if ($user === null) {
-			return false;
+			return;
 		}
 
-		// Get a fake login response
-		$options            = ['remember' => false];
-		$response           = new AuthenticationResponse();
-		$response->status   = (string)Authentication::STATUS_SUCCESS;
-		$response->type     = 'icstoken';
-		$response->username = $user->username;
-		$response->email    = $user->email;
-		$response->fullname = $user->name;
+		$app->loadIdentity($user);
+		$this->setCurrentUser($user);
+	}
 
-		// Run the login user events
-		PluginHelper::importPlugin('user');
-		$app->triggerEvent('onLoginUser', [(array)$response, $options]);
+	private function getUserForIcsToken(string $token): ?User
+	{
+		if (preg_match('/^[A-Za-z0-9_-]{8,128}$/', $token) !== 1) {
+			return null;
+		}
 
-		// Set the user in the session, effectively logging in the user
-		$app->getSession()->set('user', $user);
+		$db    = Factory::getContainer()->get(DatabaseInterface::class);
+		$query = $db->getQuery(true)
+			->select($db->quoteName('id'))
+			->from($db->quoteName('#__users'))
+			->where($db->quoteName('params') . ' LIKE ' . $db->quote('%"token":"' . $token . '"%'));
+		$db->setQuery($query);
+		$id = (int)$db->loadResult();
+		if ($id === 0) {
+			return null;
+		}
 
-		return true;
+		$user = $this->getUserFactory()->loadUserById($id);
+		if ($user->guest || (int)$user->block === 1) {
+			return null;
+		}
+
+		$stored = (string)(new Registry($user->params))->get('token');
+		if ($stored === '' || !hash_equals($stored, $token)) {
+			return null;
+		}
+
+		return $user;
 	}
 }
