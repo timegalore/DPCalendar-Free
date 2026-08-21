@@ -1,6 +1,8 @@
+# DPCalendar Free (Timegalore fork)
 
-# DPCalendar, a Joomla event calendar
-This is the source of DPCalendar. Here you will find the component, some modules and plugins of DPCalendar.
+This is a fork of DPCalendar Free. Version **10.11.2.1** of this upgrade was implemented by **Timegalore Ltd** and **Cursor**. Earlier versions are by **Digital Peak**.
+
+Original project: [DPCalendar](https://joomla.digital-peak.com) by Digital Peak.
 
 ## PREREQUISITS
 - Joomla 4.4.4 and above
@@ -15,7 +17,6 @@ To install DPCalendar extract the component, your desired modules and the plugin
 To upgrade DPCalendar from an earlier version, just install the package or individual extensions with the joomla installer, DPCalendar will handle the upgrade procedure by itself.
 
 ## DOCUMENTATION
-Check https://joomla.digital-peak.com for the documentation and new releases.
+Digital Peak documentation: https://joomla.digital-peak.com
 
-Have fun
-The Digital Peak team
+This fork: https://github.com/timegalore/DPCalendar-Free

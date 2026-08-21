@@ -10,5 +10,6 @@
 use Joomla\CMS\Language\Text;
 ?>
 <div class="com-dpcalendar-adminlist__footer dp-footer">
-	<?php echo Text::sprintf('COM_DPCALENDAR_FOOTER', $this->input->getString('DPCALENDAR_VERSION', '')); ?>
+	<div><?php echo Text::_('COM_DPCALENDAR_FOOTER_UPGRADE'); ?></div>
+	<div><?php echo Text::sprintf('COM_DPCALENDAR_FOOTER', $this->input->getString('DPCALENDAR_VERSION', '')); ?></div>
 </div>

@@ -70,7 +70,8 @@ $this->app->enqueueMessage($this->translate('COM_DPCALENDAR_VIEW_TOOLS_IMPORT_WA
 			<?php } ?>
 		</div>
 		<div class="com-dpcalendar-tools-import__footer">
-			<?php echo sprintf($this->translate('COM_DPCALENDAR_FOOTER'), $this->input->getString('DPCALENDAR_VERSION', '')); ?>
+			<div><?php echo $this->translate('COM_DPCALENDAR_FOOTER_UPGRADE'); ?></div>
+			<div><?php echo sprintf($this->translate('COM_DPCALENDAR_FOOTER'), $this->input->getString('DPCALENDAR_VERSION', '')); ?></div>
 		</div>
 	</div>
 	<input type="hidden" name="task" value=""/>

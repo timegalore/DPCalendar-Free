@@ -54,7 +54,8 @@ $this->app->enqueueMessage($this->translate('COM_DPCALENDAR_VIEW_TOOLS_TRANSLATE
 			</tbody>
 		</table>
 		<div class="com-dpcalendar-tools-translate__footer">
-			<?php echo Text::sprintf('COM_DPCALENDAR_FOOTER', $this->input->getString('DPCALENDAR_VERSION', '')); ?>
+			<div><?php echo Text::_('COM_DPCALENDAR_FOOTER_UPGRADE'); ?></div>
+			<div><?php echo Text::sprintf('COM_DPCALENDAR_FOOTER', $this->input->getString('DPCALENDAR_VERSION', '')); ?></div>
 		</div>
 	</div>
 </div>

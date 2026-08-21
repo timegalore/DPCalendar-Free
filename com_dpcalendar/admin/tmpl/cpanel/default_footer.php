@@ -13,6 +13,9 @@ use Joomla\CMS\Language\Text;
 $url = 'http://extensions.joomla.org/extensions/extension/calendars-a-events/events/dpcalendar' . (DPCalendarHelper::isFree() ? '-lite' : '');
 ?>
 <div class="com-dpcalendar-cpanel__footer dp-footer">
+	<div class="dp-footer__upgrade">
+		<?php echo Text::_('COM_DPCALENDAR_FOOTER_UPGRADE'); ?>
+	</div>
 	<div class="dp-footer__version">
 		<?php echo Text::sprintf('COM_DPCALENDAR_FOOTER', $this->input->getString('DPCALENDAR_VERSION', '')); ?>
 	</div>
