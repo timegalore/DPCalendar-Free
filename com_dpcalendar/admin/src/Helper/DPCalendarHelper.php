@@ -526,11 +526,9 @@ class DPCalendarHelper
 			$m = new Engine();
 
 			return $m->render($output, $configuration);
-		} catch (\Exception $exception) {
-			echo $exception->getMessage();
+		} catch (\Exception) {
+			return '';
 		}
-
-		return '';
 	}
 
 	public static function renderPrice(string $price = ''): string

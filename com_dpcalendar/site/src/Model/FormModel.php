@@ -84,6 +84,10 @@ class FormModel extends EventModel
 	 */
 	public function mailtickets(int $eventId, string $subject, string $body, array $ticketIds): bool
 	{
+		if (DPCalendarHelper::isFree()) {
+			throw new \Exception('COM_DPCALENDAR_ALERT_NO_AUTH');
+		}
+
 		$event = $this->bootComponent('dpcalendar')->getMVCFactory()->createModel('Event', 'Site')->getItem($eventId);
 		if (!$event || !$event->params->get('send-tickets-mail')) {
 			throw new \Exception('COM_DPCALENDAR_ALERT_NO_AUTH');
@@ -99,8 +103,8 @@ class FormModel extends EventModel
 			$app->setUserState('com_dpcalendar.form.event.mailticketsdata.message', $body);
 		}
 
-		$subject = DPCalendarHelper::renderEvents([$event], $subject);
-		$body    = DPCalendarHelper::renderEvents([$event], $body);
+		$subject = htmlspecialchars(strip_tags($subject), ENT_QUOTES, 'UTF-8');
+		$body    = ComponentHelper::filterText($body);
 
 		$mailer = new MustacheMailTemplate('event.ticketholders', ['events' => [$event], 'subject' => $subject, 'body' => $body]);
 		$mailer->setReplyTo($this->getCurrentUser()->email);
