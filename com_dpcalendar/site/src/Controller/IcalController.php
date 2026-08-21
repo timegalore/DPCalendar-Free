@@ -22,7 +22,6 @@ use Joomla\CMS\User\User;
 use Joomla\CMS\User\UserFactoryAwareInterface;
 use Joomla\CMS\User\UserFactoryAwareTrait;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Filesystem\Path;
 use Joomla\Registry\Registry;
 
 class IcalController extends BaseController implements UserFactoryAwareInterface, CurrentUserInterface
@@ -53,7 +52,7 @@ class IcalController extends BaseController implements UserFactoryAwareInterface
 		// Download the external url
 		if ($calendar->getIcalUrl() !== '' && $calendar->getIcalUrl() !== '0' && $calendar->getIcalUrl() === 'plugin') {
 			header('Content-Type: text/calendar; charset=utf-8');
-			header('Content-disposition: attachment; filename="' . $calendar->getTitle() . '.ics"');
+			header('Content-disposition: ' . $this->icsContentDisposition($calendar->getTitle()));
 
 			echo implode('', $app->triggerEvent('onDPCalendarGetIcal', ['id' => $calendar->getId()]));
 			$app->close();
@@ -66,7 +65,7 @@ class IcalController extends BaseController implements UserFactoryAwareInterface
 			}
 
 			header('Content-Type: text/calendar; charset=utf-8');
-			header('Content-disposition: attachment; filename="' . $calendar->getTitle() . '.ics"');
+			header('Content-disposition: ' . $this->icsContentDisposition($calendar->getTitle()));
 
 			$headers = [
 				'Accept-Language: ' . $this->getCurrentUser()->getParam('language', $app->getLanguage()->getTag()),
@@ -88,7 +87,7 @@ class IcalController extends BaseController implements UserFactoryAwareInterface
 
 		// Download the ical content
 		$app->setHeader('Content-Type', 'text/calendar; charset=utf-8', true);
-		$app->setHeader('Content-disposition', 'attachment; filename="' . Path::clean($calendar->getTitle()) . '.ics"', true);
+		$app->setHeader('Content-disposition', $this->icsContentDisposition($calendar->getTitle()), true);
 
 		$buffer = $this->app->bootComponent('dpcalendar')->getMVCFactory()->createModel('Ical', 'Administrator')->createIcalFromCalendar($calendars, false);
 		$buffer = MailHelper::convertRelativeToAbsoluteUrls($buffer);
@@ -97,7 +96,7 @@ class IcalController extends BaseController implements UserFactoryAwareInterface
 		/* @deprecated no format is not supported */
 		if ($app->getInput()->get('format') !== 'raw') {
 			header('Content-Type: text/calendar; charset=utf-8');
-			header('Content-disposition: attachment; filename="' . Path::clean($calendar->getTitle()) . '.ics"');
+			header('Content-disposition: ' . $this->icsContentDisposition($calendar->getTitle()));
 			$app->close();
 		}
 	}
@@ -149,5 +148,20 @@ class IcalController extends BaseController implements UserFactoryAwareInterface
 		}
 
 		return $user;
+	}
+
+	private function icsContentDisposition(string $title): string
+	{
+		$name = preg_replace('/[\x00-\x1F\x7F"\\\\\/:*?<>|]/', '', $title) ?? '';
+		$name = trim($name, " .");
+		if ($name === '') {
+			$name = 'calendar';
+		}
+
+		if (\strlen($name) > 150) {
+			$name = substr($name, 0, 150);
+		}
+
+		return 'attachment; filename="' . $name . '.ics"';
 	}
 }
