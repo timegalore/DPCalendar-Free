@@ -290,6 +290,8 @@ class EventController extends FormController implements CurrentUserInterface
 
 	public function move(): void
 	{
+		Session::checkToken('request') or jexit(Text::_('JINVALID_TOKEN'));
+
 		$data       = [];
 		$data['id'] = $this->input->getString('id', '');
 		$success    = false;

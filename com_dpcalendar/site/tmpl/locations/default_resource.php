@@ -8,6 +8,7 @@
 \defined('_JEXEC') or die();
 
 use DigitalPeak\Component\DPCalendar\Administrator\Helper\DPCalendarHelper;
+use Joomla\CMS\Session\Session;
 
 if (!$this->params->get('locations_show_resource_view', 1) || DPCalendarHelper::isFree()) {
 	return;
@@ -37,6 +38,7 @@ $this->dpdocument->addScriptOptions('itemid', $this->input->getInt('Itemid', 0))
 
 $options                   = [];
 $options['requestUrlRoot'] = 'view=events&format=raw&limit=0&l=1&Itemid=' . $this->input->getInt('Itemid', 0);
+$options['token']          = Session::getFormToken();
 $options['calendarIds']    = $this->ids;
 
 $options['initialView'] = $this->params->get('locations_default_view', 'resday');

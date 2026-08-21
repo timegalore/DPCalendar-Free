@@ -8,6 +8,7 @@
 \defined('_JEXEC') or die();
 
 use DigitalPeak\Component\DPCalendar\Administrator\Helper\DPCalendarHelper;
+use Joomla\CMS\Session\Session;
 use Joomla\Utilities\ArrayHelper;
 
 // Loading the strings for javascript
@@ -55,6 +56,7 @@ $params = $this->params;
 // The options which will be passed to the js library
 $options                         = [];
 $options['requestUrlRoot']       = 'view=events&format=raw&limit=0&Itemid=' . $this->input->getInt('Itemid', 0);
+$options['token']                = Session::getFormToken();
 $options['calendarIds']          = array_keys($this->items);
 
 // Set the default view
