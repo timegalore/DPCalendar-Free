@@ -16,10 +16,6 @@ $this->dpdocument->loadScriptFile('views/form/default.js');
 $this->dpdocument->loadStyleFile('dpcalendar/views/adminevent/default.css');
 $this->dpdocument->addStyle($this->params->get('event_form_custom_css', ''));
 
-if (DPCalendarHelper::isFree()) {
-	$this->translator->translateJS('COM_DPCALENDAR_ONLY_AVAILABLE_SUBSCRIBERS');
-}
-
 if (!empty($this->event->tickets)) {
 	$this->translator->translateJS('COM_DPCALENDAR_VIEW_EVENT_SEND_TICKET_HOLDERS_NOFICATION');
 	$this->translator->translateJS('JYES');

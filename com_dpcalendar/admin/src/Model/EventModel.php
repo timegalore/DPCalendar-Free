@@ -456,6 +456,10 @@ class EventModel extends AdminModel implements UserFactoryAwareInterface
 			$data['capacity'] = 0;
 		}
 
+		if (!empty($data['scheduling']) && !\in_array($data['scheduling'], ['0', 0, '', null], true)) {
+			$data['rrule'] = $this->buildRRuleFromScheduling($data);
+		}
+
 		$success = parent::save($data);
 		if (!$success) {
 			return $success;
@@ -907,6 +911,103 @@ class EventModel extends AdminModel implements UserFactoryAwareInterface
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Builds an iCal RRULE from the scheduling form fields when no rule was submitted.
+	 */
+	private function buildRRuleFromScheduling(array $data): string
+	{
+		$scheduling = $data['scheduling'] ?? '0';
+		if (\in_array($scheduling, ['0', 0, '', null], true)) {
+			return '';
+		}
+
+		$rrule = '';
+
+		if ($scheduling === 'DAILY') {
+			$rrule = 'FREQ=DAILY';
+			if (($data['scheduling_daily_weekdays'] ?? '0') == '0') {
+				$rrule = 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR';
+			}
+		} elseif ($scheduling === 'WEEKLY') {
+			$rrule = 'FREQ=WEEKLY';
+			$days  = array_filter((array)($data['scheduling_weekly_days'] ?? []), static fn ($day): bool => $day !== '' && $day !== null);
+			if ($days !== []) {
+				$rrule .= ';BYDAY=' . implode(',', $days);
+			}
+		} elseif ($scheduling === 'MONTHLY') {
+			$rrule = 'FREQ=MONTHLY';
+			if (($data['scheduling_monthly_options'] ?? 'by_week') === 'by_day') {
+				$days = array_filter((array)($data['scheduling_monthly_days'] ?? []), static fn ($day): bool => $day !== '' && $day !== null);
+				if ($days !== []) {
+					$rrule .= ';BYMONTHDAY=' . implode(',', $days);
+				}
+			} else {
+				$weeks    = (array)($data['scheduling_monthly_week'] ?? []);
+				$weekDays = array_filter((array)($data['scheduling_monthly_week_days'] ?? []), static fn ($day): bool => $day !== '' && $day !== null);
+				$byDay    = [];
+				foreach ($weeks as $week) {
+					if ($week === '' || $week === null || $weekDays === []) {
+						continue;
+					}
+
+					$weekValue = $week === 'last' ? '-1' : $week;
+					foreach ($weekDays as $day) {
+						$byDay[] = $weekValue . $day;
+					}
+				}
+
+				if ($byDay !== []) {
+					$rrule .= ';BYDAY=' . implode(',', $byDay);
+				}
+			}
+		} elseif ($scheduling === 'YEARLY') {
+			$rrule = 'FREQ=YEARLY';
+		}
+
+		if ($rrule === '') {
+			return '';
+		}
+
+		$interval = (int)($data['scheduling_interval'] ?? 0);
+		if ($interval > 0) {
+			$rrule .= ';INTERVAL=' . $interval;
+		}
+
+		$count = (int)($data['scheduling_repeat_count'] ?? 0);
+		if ($count > 0) {
+			$rrule .= ';COUNT=' . $count;
+		}
+
+		$untilDate = $this->resolveSchedulingUntil($data);
+		$rrule .= ';UNTIL=' . $untilDate->format('Ymd', true) . 'T235900Z';
+
+		return $rrule;
+	}
+
+	/**
+	 * Uses the until date from the form when it is after the event start.
+	 * The form default is relative to today, so a future event can otherwise
+	 * end on the first occurrence and never create a visible series.
+	 */
+	private function resolveSchedulingUntil(array $data): \DateTime
+	{
+		$allDay = !empty($data['all_day']);
+		$start  = DPCalendarHelper::getDate($data['start_date'] ?? 'now', $allDay);
+
+		$until = $data['scheduling_end_date'] ?? '';
+		if (!\in_array($until, ['', '0', null], true)) {
+			$untilDate = DPCalendarHelper::getDate($until, true);
+			if ($untilDate->format('Y-m-d', true) > $start->format('Y-m-d', true)) {
+				return $untilDate;
+			}
+		}
+
+		$untilDate = clone $start;
+		$untilDate->modify('+1 year');
+
+		return $untilDate;
 	}
 
 	protected function getParams(): Registry

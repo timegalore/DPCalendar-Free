@@ -31,8 +31,6 @@ use Mustache\Engine;
 class DPCalendarHelper
 {
 	public static array $DISABLED_FREE_FIELDS = [
-		'rrule',
-		'exdates',
 		'capacity_used',
 		'max_tickets',
 		'booking_closing_date',

@@ -7,7 +7,6 @@
 
 \defined('_JEXEC') or die();
 
-use DigitalPeak\Component\DPCalendar\Administrator\Helper\DPCalendarHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 
 // Load the maps scripts when required
@@ -19,10 +18,6 @@ if (!in_array('location_ids', $this->params->get('event_form_hidden_fields', [])
 $this->dpdocument->loadStyleFile('dpcalendar/views/form/default.css');
 $this->dpdocument->loadScriptFile('views/form/default.js');
 $this->dpdocument->addStyle($this->params->get('event_form_custom_css', ''));
-
-if (DPCalendarHelper::isFree()) {
-	$this->translator->translateJS('COM_DPCALENDAR_ONLY_AVAILABLE_SUBSCRIBERS');
-}
 
 if (!empty($this->event->tickets)) {
 	$this->translator->translateJS('COM_DPCALENDAR_VIEW_EVENT_SEND_TICKET_HOLDERS_NOFICATION');
