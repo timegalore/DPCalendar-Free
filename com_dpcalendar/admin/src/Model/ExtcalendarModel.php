@@ -160,19 +160,29 @@ class ExtcalendarModel extends AdminModel
 				}
 			}
 			if ($ids !== []) {
+				$db = $this->getDatabase();
+
 				// Delete the events
-				$this->getDatabase()->setQuery("delete from #__dpcalendar_events where catid in ('" . implode("','", $ids) . "')");
-				$this->getDatabase()->execute();
+				$query = $db->getQuery(true)
+					->delete($db->quoteName('#__dpcalendar_events'))
+					->where($db->quoteName('catid') . ' IN (' . implode(',', array_map([$db, 'quote'], $ids)) . ')');
+				$db->setQuery($query);
+				$db->execute();
 
 				// Delete the location associations
-				$this->getDatabase()->setQuery('delete from #__dpcalendar_events_location where event_id not in (select id from #__dpcalendar_events)');
-				$this->getDatabase()->execute();
-				$this->getDatabase()->setQuery('delete from #__dpcalendar_events_hosts where event_id not in (select id from #__dpcalendar_events)');
-				$this->getDatabase()->execute();
+				$db->setQuery('delete from #__dpcalendar_events_location where event_id not in (select id from #__dpcalendar_events)');
+				$db->execute();
+				$db->setQuery('delete from #__dpcalendar_events_hosts where event_id not in (select id from #__dpcalendar_events)');
+				$db->execute();
 
 				// Clearing the sync token
-				$this->getDatabase()->setQuery("update #__dpcalendar_extcalendars set sync_date = null, sync_token = null where plugin = '" . $plugin . "'");
-				$this->getDatabase()->execute();
+				$query = $db->getQuery(true)
+					->update($db->quoteName('#__dpcalendar_extcalendars'))
+					->set($db->quoteName('sync_date') . ' = NULL')
+					->set($db->quoteName('sync_token') . ' = NULL')
+					->where($db->quoteName('plugin') . ' = ' . $db->quote($plugin));
+				$db->setQuery($query);
+				$db->execute();
 			}
 		}
 

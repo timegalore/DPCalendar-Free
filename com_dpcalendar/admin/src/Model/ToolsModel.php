@@ -84,8 +84,13 @@ class ToolsModel extends BaseDatabaseModel
 
 	public function getPluginForName(string $name): ?\stdClass
 	{
-		$db = $this->getDatabase();
-		$db->setQuery("SELECT *  FROM `#__extensions` WHERE  `name` LIKE  '" . str_replace('-sys', '', $name) . "'");
+		$name = str_replace('-sys', '', $name);
+		$db   = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('*')
+			->from($db->quoteName('#__extensions'))
+			->where($db->quoteName('name') . ' = ' . $db->quote($name));
+		$db->setQuery($query);
 
 		return $db->loadObject();
 	}
