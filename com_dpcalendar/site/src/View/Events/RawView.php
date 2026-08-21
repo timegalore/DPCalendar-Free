@@ -14,6 +14,7 @@ use DigitalPeak\Component\DPCalendar\Administrator\View\BaseView;
 use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ModuleHelper;
+use Joomla\CMS\Language\Text;
 use Joomla\Registry\Registry;
 
 class RawView extends BaseView
@@ -117,7 +118,7 @@ class RawView extends BaseView
 				[
 					[
 						'data'     => [],
-						'messages' => ['error' => [$error['message'] . ': <br/>' . $error['file'] . ' ' . $error['line']]]
+						'messages' => ['error' => [Text::_('JERROR_AN_ERROR_HAS_OCCURRED')]]
 					]
 				]
 			);
