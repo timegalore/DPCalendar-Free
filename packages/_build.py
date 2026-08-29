@@ -10,8 +10,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = Path(__file__).resolve().parent
-VERSION = "10.11.2.3"
+VERSION = "10.11.2.4"
+CREATION_DATE = "2026-08-29"
 PREVIOUS_PACKAGE = PACKAGES / "pkg_dpcalendar-10.11.2.1.zip"
+OFFICIAL_PACKAGE = PACKAGES / "DPCalendar-Free_10_12_0.zip"
 OUTPUT = PACKAGES / f"pkg_dpcalendar-{VERSION}.zip"
 
 SKIP_NAMES = {".gitkeep", ".gitignore", ".gitattributes", ".DS_Store", "Thumbs.db"}
@@ -35,90 +37,110 @@ def should_skip(path: Path) -> bool:
     return any(part in SKIP_DIR_NAMES for part in path.parts)
 
 
-def add_directory(zf: zipfile.ZipFile, src: Path, arc_prefix: str = "") -> None:
+def add_directory(members: dict[str, bytes], src: Path, arc_prefix: str = "") -> None:
     for file in sorted(src.rglob("*")):
         if not file.is_file() or should_skip(file):
             continue
         rel = file.relative_to(src).as_posix()
         arcname = f"{arc_prefix}/{rel}" if arc_prefix else rel
-        zf.write(file, arcname)
+        members[arcname] = file.read_bytes()
 
 
-def copy_missing_from_zip(zf: zipfile.ZipFile, source: zipfile.ZipFile, prefixes: tuple[str, ...]) -> int:
-    existing = set(zf.namelist())
+def overlay_from_zip(
+    members: dict[str, bytes],
+    source: zipfile.ZipFile,
+    prefixes: tuple[str, ...],
+    overwrite: bool,
+) -> int:
     added = 0
     for name in source.namelist():
         if name.endswith("/"):
             continue
         if not name.startswith(prefixes):
             continue
-        if name in existing:
+        if not overwrite and name in members:
             continue
-        zf.writestr(name, source.read(name))
+        members[name] = source.read(name)
         added += 1
     return added
 
 
+def write_zip(members: dict[str, bytes]) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for name in sorted(members):
+            zf.writestr(name, members[name])
+    return buffer.getvalue()
+
+
 def bump_manifest(xml: str) -> str:
     xml = re.sub(r"<version>[^<]+</version>", f"<version>{VERSION}</version>", xml)
-    xml = re.sub(r"<creationDate>[^<]+</creationDate>", "<creationDate>2026-08-21</creationDate>", xml)
+    xml = re.sub(r"<creationDate>[^<]+</creationDate>", f"<creationDate>{CREATION_DATE}</creationDate>", xml)
     return xml
 
 
-def build_component(previous: zipfile.ZipFile) -> bytes:
-    buffer = io.BytesIO()
-    src = ROOT / "com_dpcalendar"
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        add_directory(zf, src)
-        previous_component = zipfile.ZipFile(io.BytesIO(previous.read("com_dpcalendar.zip")))
-        added_vendor = copy_missing_from_zip(zf, previous_component, ("admin/vendor/",))
-        added_media = copy_missing_from_zip(zf, previous_component, ("media/js/", "media/css/"))
-        print(f"  com_dpcalendar: +{added_vendor} vendor files, +{added_media} compiled media files")
-    return buffer.getvalue()
+def build_component(previous: zipfile.ZipFile, official: zipfile.ZipFile) -> bytes:
+    members: dict[str, bytes] = {}
+    add_directory(members, ROOT / "com_dpcalendar")
+    official_component = zipfile.ZipFile(io.BytesIO(official.read("com_dpcalendar.zip")))
+    previous_component = zipfile.ZipFile(io.BytesIO(previous.read("com_dpcalendar.zip")))
+    vendor = overlay_from_zip(members, official_component, ("admin/vendor/",), overwrite=True)
+    media = overlay_from_zip(members, official_component, ("media/js/", "media/css/"), overwrite=True)
+    filled = overlay_from_zip(
+        members,
+        previous_component,
+        ("admin/vendor/", "media/js/", "media/css/"),
+        overwrite=False,
+    )
+    print(f"  com_dpcalendar: {vendor} vendor from 10.12.0, {media} compiled media from 10.12.0, +{filled} filled from previous")
+    return write_zip(members)
 
 
-def build_plugin(name: str, previous: zipfile.ZipFile) -> bytes:
-    buffer = io.BytesIO()
-    src = ROOT / name
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        add_directory(zf, src)
-        previous_plugin = zipfile.ZipFile(io.BytesIO(previous.read(f"{name}.zip")))
-        added_media = copy_missing_from_zip(zf, previous_plugin, ("media/",))
-        if added_media:
-            print(f"  {name}: +{added_media} compiled media files")
-    return buffer.getvalue()
+def build_plugin(name: str, previous: zipfile.ZipFile, official: zipfile.ZipFile) -> bytes:
+    members: dict[str, bytes] = {}
+    add_directory(members, ROOT / name)
+    official_plugin = zipfile.ZipFile(io.BytesIO(official.read(f"{name}.zip")))
+    previous_plugin = zipfile.ZipFile(io.BytesIO(previous.read(f"{name}.zip")))
+    media = overlay_from_zip(members, official_plugin, ("media/",), overwrite=True)
+    filled = overlay_from_zip(members, previous_plugin, ("media/",), overwrite=False)
+    if media or filled:
+        print(f"  {name}: {media} media from 10.12.0, +{filled} filled from previous")
+    return write_zip(members)
 
 
-def build_installer(previous: zipfile.ZipFile) -> bytes:
-    buffer = io.BytesIO()
-    previous_plugin = zipfile.ZipFile(io.BytesIO(previous.read("plg_installer_dpcalendar.zip")))
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        for name in previous_plugin.namelist():
-            if name.endswith("/"):
-                continue
-            data = previous_plugin.read(name)
-            if name.endswith("dpcalendar.xml"):
-                data = bump_manifest(data.decode("utf-8")).encode("utf-8")
-            zf.writestr(name, data)
-    return buffer.getvalue()
+def build_installer(previous: zipfile.ZipFile, official: zipfile.ZipFile) -> bytes:
+    source = official if "plg_installer_dpcalendar.zip" in official.namelist() else previous
+    plugin = zipfile.ZipFile(io.BytesIO(source.read("plg_installer_dpcalendar.zip")))
+    members: dict[str, bytes] = {}
+    for name in plugin.namelist():
+        if name.endswith("/"):
+            continue
+        data = plugin.read(name)
+        if name.endswith("dpcalendar.xml"):
+            data = bump_manifest(data.decode("utf-8")).encode("utf-8")
+        members[name] = data
+    return write_zip(members)
 
 
 def main() -> None:
     if not PREVIOUS_PACKAGE.exists():
         raise SystemExit(f"Previous package not found: {PREVIOUS_PACKAGE}")
+    if not OFFICIAL_PACKAGE.exists():
+        raise SystemExit(f"Official package not found: {OFFICIAL_PACKAGE}")
 
     previous = zipfile.ZipFile(PREVIOUS_PACKAGE)
+    official = zipfile.ZipFile(OFFICIAL_PACKAGE)
     members: dict[str, bytes] = {}
 
     print("Building component...")
-    members["com_dpcalendar.zip"] = build_component(previous)
+    members["com_dpcalendar.zip"] = build_component(previous, official)
 
     print("Building plugins...")
     for plugin in PLUGINS:
-        members[f"{plugin}.zip"] = build_plugin(plugin, previous)
+        members[f"{plugin}.zip"] = build_plugin(plugin, previous, official)
 
     print("Building installer plugin...")
-    members["plg_installer_dpcalendar.zip"] = build_installer(previous)
+    members["plg_installer_dpcalendar.zip"] = build_installer(previous, official)
 
     members["pkg_dpcalendar.xml"] = (ROOT / "pkg_dpcalendar.xml").read_bytes()
     members["script.php"] = (ROOT / "script.php").read_bytes()

@@ -125,7 +125,7 @@ class DPCalendarHelper
 			$event->images = json_decode($event->images);
 		}
 
-		$images        = $event->images;
+		$images        = (object)$event->images;
 		$event->images = new \stdClass();
 
 
@@ -413,6 +413,7 @@ class DPCalendarHelper
 			if ($params->get('description_length', 0) > 0) {
 				$variables['description'] = HTMLHelper::_('string.truncate', $variables['description'], $params->get('description_length', 0));
 			}
+			$variables['introText'] = $event->introText ?? '';
 
 			$status = 'JUNPUBLISHED';
 			switch ($event->state) {

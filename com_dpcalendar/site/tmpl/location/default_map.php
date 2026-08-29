@@ -12,7 +12,7 @@ if (!$params->get('location_show_map', 1) || $params->get('map_provider', 'opens
 	return;
 }
 
-$description = '<a href="' . $this->router->getLocationRoute($this->location) . '">' . $this->location->title . '</a>';
+$description = '<a href="' . $this->router->getLocationRoute($this->location->id) . '">' . $this->location->title . '</a>';
 ?>
 <div class="com-dpcalendar-location__map dp-location">
 	<div class="dp-map dp-location__details"
@@ -20,7 +20,7 @@ $description = '<a href="' . $this->router->getLocationRoute($this->location) . 
 		 data-zoom="<?php echo $params->get('location_map_zoom', 10); ?>"
 		 data-latitude="<?php echo $this->location->latitude; ?>"
 		 data-longitude="<?php echo $this->location->longitude; ?>"
-		 data-title="<?php echo $this->location->title; ?>"
+		 data-title="<?php echo $this->escape($this->location->title); ?>"
 		 data-description="<?php echo $this->escape($description); ?>"
 		 data-color="<?php echo $this->location->color; ?>"
 		 data-ask-consent="<?php echo $params->get('map_ask_consent'); ?>">
