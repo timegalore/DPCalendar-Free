@@ -10,8 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = Path(__file__).resolve().parent
-VERSION = "10.11.2.4"
-CREATION_DATE = "2026-08-29"
+VERSION = "10.11.2.5"
+CREATION_DATE = "2026-09-15"
 PREVIOUS_PACKAGE = PACKAGES / "pkg_dpcalendar-10.11.2.1.zip"
 OFFICIAL_PACKAGE = PACKAGES / "DPCalendar-Free_10_12_0.zip"
 OUTPUT = PACKAGES / f"pkg_dpcalendar-{VERSION}.zip"
