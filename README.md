@@ -1,6 +1,6 @@
 # DPCalendar Free (Timegalore fork)
 
-This is a fork of DPCalendar Free. Version **10.11.2.6** of this upgrade was implemented by **Timegalore Ltd** and **Cursor**. Earlier versions are by **Digital Peak**.
+This is a fork of DPCalendar Free. Version **10.11.2.7** of this upgrade was implemented by **Timegalore Ltd** and **Cursor**. Earlier versions are by **Digital Peak**.
 
 Original project: [DPCalendar](https://joomla.digital-peak.com) by Digital Peak.
 

@@ -10,8 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = Path(__file__).resolve().parent
-VERSION = "10.11.2.6"
-CREATION_DATE = "2026-10-05"
+VERSION = "10.11.2.7"
+CREATION_DATE = "2026-10-30"
 PREVIOUS_PACKAGE = PACKAGES / "pkg_dpcalendar-10.11.2.1.zip"
 OFFICIAL_PACKAGE = PACKAGES / "DPCalendar-Free_10_12_0.zip"
 OUTPUT = PACKAGES / f"pkg_dpcalendar-{VERSION}.zip"
@@ -92,8 +92,25 @@ def build_component(previous: zipfile.ZipFile, official: zipfile.ZipFile) -> byt
         ("admin/vendor/", "media/js/", "media/css/"),
         overwrite=False,
     )
+    patch_calendar_get_requests(members)
     print(f"  com_dpcalendar: {vendor} vendor from 10.12.0, {media} compiled media from 10.12.0, +{filled} filled from previous")
     return write_zip(members)
+
+
+def patch_calendar_get_requests(members: dict[str, bytes]) -> None:
+    """Official 10.12.4: do not send a body on GET. Newer PHP rejects it and the calendar JSON feed fails."""
+    name = "media/js/modules/dpcalendar.min.js"
+    old = b'method:null==s?"POST":s,data:r,onSuccess:'
+    new = b'method:null==s?"POST":s,data:null==s||"get"!==s.toLowerCase()?r:null,onSuccess:'
+    data = members.get(name)
+    if data is None:
+        raise SystemExit(f"Missing {name}; cannot apply the 10.12.4 calendar request fix")
+    if new in data:
+        return
+    count = data.count(old)
+    if count != 1:
+        raise SystemExit(f"Expected one calendar GET body to patch in {name}, found {count}")
+    members[name] = data.replace(old, new, 1)
 
 
 def build_plugin(name: str, previous: zipfile.ZipFile, official: zipfile.ZipFile) -> bytes:

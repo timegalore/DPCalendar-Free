@@ -55,7 +55,7 @@ class SendNotificationMail implements StageInterface, UserFactoryAwareInterface
 		$emails = $this->sendNotificationMail(
 			'booking.update',
 			[$payload->item],
-			['events' => $payload->eventsWithTickets] + $payload->mailVariables,
+			['events' => $payload->eventsWithTickets, 'oldItem' => $payload->oldItem] + $payload->mailVariables,
 			$payload->mailParams->get('bookingsys_attendee_as_mail_from') ? $payload->item->email : ''
 		);
 
